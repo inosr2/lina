@@ -2,13 +2,14 @@ import os
 import telebot
 import google.generativeai as genai
 from dotenv import load_dotenv
+from flask import Flask
+from threading import Thread
 
 load_dotenv()
 
 # Get API keys from environment variables
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-
 
 # Initialize Telegram Bot
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
@@ -18,6 +19,13 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 # Create Gemini AI model
 model = genai.GenerativeModel('gemini-pro')
+
+# Create Flask app for pinging
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return "Bot is up and running!"
 
 # Welcome message handler
 @bot.message_handler(commands=['start', 'help'])
@@ -118,9 +126,19 @@ def handle_message(message):
     except Exception as e:
         bot.reply_to(message, "I'm having trouble processing your message.")
 
-# Start the bot
+# Start the bot and the Flask app (on separate threads)
+def start_flask_app():
+    app.run(host="0.0.0.0", port=5000)
+
 def main():
     print("Bot is running...")
+    
+    # Start Flask app in a separate thread
+    thread = Thread(target=start_flask_app)
+    thread.daemon = True
+    thread.start()
+    
+    # Start polling for the Telegram bot
     bot.polling(none_stop=True)
 
 if __name__ == '__main__':
