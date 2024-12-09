@@ -138,6 +138,7 @@ def main():
     thread.daemon = True
     thread.start()
     
+    bot.remove_webhook()
     # Start polling for the Telegram bot
     bot.polling(none_stop=True)
 
